@@ -31,9 +31,11 @@ class Config:
     # OpenAI Compatible 自定义端点
     asr_provider: str = "dashscope"       # "dashscope" | "openai_compat"
     polish_provider: str = "dashscope"    # "dashscope" | "openai_compat"
-    custom_api_key: str = ""
-    custom_api_base_url: str = "https://api.openai.com/v1"
+    custom_asr_api_key: str = ""
+    custom_asr_base_url: str = "https://api.openai.com/v1"
     custom_asr_model: str = "whisper-1"
+    custom_polish_api_key: str = ""
+    custom_polish_base_url: str = "https://api.openai.com/v1"
     custom_polish_model: str = "gpt-4o-mini"
 
     mic_index: int | None = None

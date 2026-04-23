@@ -741,7 +741,7 @@ class _ApiSettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("API 设置")
         self.setWindowIcon(icons.app_icon())
-        self.setFixedSize(480, 500)
+        self.setFixedSize(480, 580)
         self.setStyleSheet("background:#1e1e1e; color:#fff;")
         self._result_accepted = False
 
@@ -784,11 +784,11 @@ class _ApiSettingsDialog(QDialog):
         ds_key_input_row.addWidget(ds_show)
         layout.addLayout(ds_key_input_row)
 
-        # ── 自定义 OpenAI Compatible ──
+        # ── 自定义端点 · 语音识别 (ASR) ──
         layout.addSpacing(6)
-        lbl_custom = QLabel("── 自定义 OpenAI Compatible 端点 ──")
-        lbl_custom.setStyleSheet(self._SECTION_STYLE)
-        layout.addWidget(lbl_custom)
+        lbl_asr = QLabel("── 自定义端点 · 语音识别 (ASR) ──")
+        lbl_asr.setStyleSheet(self._SECTION_STYLE)
+        layout.addWidget(lbl_asr)
 
         def _field(label_text, placeholder, value, password=False):
             row = QHBoxLayout()
@@ -812,21 +812,35 @@ class _ApiSettingsDialog(QDialog):
                 row.addWidget(show_btn)
             return row, inp
 
-        custom_key_row, self._custom_key = _field(
-            "API Key:", "sk-...", config.custom_api_key, password=True)
-        layout.addLayout(custom_key_row)
+        asr_key_row, self._asr_api_key = _field(
+            "API Key:", "sk-...", config.custom_asr_api_key, password=True)
+        layout.addLayout(asr_key_row)
 
-        custom_url_row, self._custom_url = _field(
-            "Base URL:", "https://api.openai.com/v1", config.custom_api_base_url)
-        layout.addLayout(custom_url_row)
+        asr_url_row, self._asr_base_url = _field(
+            "Base URL:", "https://api.openai.com/v1", config.custom_asr_base_url)
+        layout.addLayout(asr_url_row)
 
-        custom_asr_row, self._custom_asr_model = _field(
-            "ASR 模型:", "whisper-1", config.custom_asr_model)
-        layout.addLayout(custom_asr_row)
+        asr_model_row, self._custom_asr_model = _field(
+            "模型:", "whisper-1", config.custom_asr_model)
+        layout.addLayout(asr_model_row)
 
-        custom_polish_row, self._custom_polish_model = _field(
-            "润色模型:", "gpt-4o-mini", config.custom_polish_model)
-        layout.addLayout(custom_polish_row)
+        # ── 自定义端点 · 文本润色 ──
+        layout.addSpacing(6)
+        lbl_polish = QLabel("── 自定义端点 · 文本润色 ──")
+        lbl_polish.setStyleSheet(self._SECTION_STYLE)
+        layout.addWidget(lbl_polish)
+
+        polish_key_row, self._polish_api_key = _field(
+            "API Key:", "sk-...", config.custom_polish_api_key, password=True)
+        layout.addLayout(polish_key_row)
+
+        polish_url_row, self._polish_base_url = _field(
+            "Base URL:", "https://api.openai.com/v1", config.custom_polish_base_url)
+        layout.addLayout(polish_url_row)
+
+        polish_model_row, self._custom_polish_model = _field(
+            "模型:", "gpt-4o-mini", config.custom_polish_model)
+        layout.addLayout(polish_model_row)
 
         # ── 提供商选择 ──
         layout.addSpacing(6)
@@ -920,16 +934,24 @@ class _ApiSettingsDialog(QDialog):
         return self._ds_key.text().strip()
 
     @property
-    def custom_api_key(self) -> str:
-        return self._custom_key.text().strip()
+    def custom_asr_api_key(self) -> str:
+        return self._asr_api_key.text().strip()
 
     @property
-    def custom_api_base_url(self) -> str:
-        return self._custom_url.text().strip()
+    def custom_asr_base_url(self) -> str:
+        return self._asr_base_url.text().strip()
 
     @property
     def custom_asr_model(self) -> str:
         return self._custom_asr_model.text().strip()
+
+    @property
+    def custom_polish_api_key(self) -> str:
+        return self._polish_api_key.text().strip()
+
+    @property
+    def custom_polish_base_url(self) -> str:
+        return self._polish_base_url.text().strip()
 
     @property
     def custom_polish_model(self) -> str:
@@ -2072,7 +2094,7 @@ class VoiceTray(QSystemTrayIcon):
         self._audio = AudioCues()
         self._audio.set_enabled(config.play_sounds)
 
-        self._key_warning = not config.api_key and not config.custom_api_key
+        self._key_warning = not config.api_key and not config.custom_asr_api_key and not config.custom_polish_api_key
         self._mic_warning = False
         self._pending_device_apply = False
         self._sync_autostart_state(save_if_changed=True)
@@ -2569,9 +2591,11 @@ class VoiceTray(QSystemTrayIcon):
         if dlg is None or result != QDialog.DialogCode.Accepted or not dlg._result_accepted:
             return
         self._config.api_key = dlg.api_key
-        self._config.custom_api_key = dlg.custom_api_key
-        self._config.custom_api_base_url = dlg.custom_api_base_url
+        self._config.custom_asr_api_key = dlg.custom_asr_api_key
+        self._config.custom_asr_base_url = dlg.custom_asr_base_url
         self._config.custom_asr_model = dlg.custom_asr_model
+        self._config.custom_polish_api_key = dlg.custom_polish_api_key
+        self._config.custom_polish_base_url = dlg.custom_polish_base_url
         self._config.custom_polish_model = dlg.custom_polish_model
         self._config.asr_provider = dlg.asr_provider
         self._config.polish_provider = dlg.polish_provider
@@ -2580,7 +2604,7 @@ class VoiceTray(QSystemTrayIcon):
         self._refresh_polish_model_menu()
         logger.info(f"[Tray] API settings updated "
                     f"(asr={dlg.asr_provider}, polish={dlg.polish_provider})")
-        has_key = bool(dlg.api_key) or bool(dlg.custom_api_key)
+        has_key = bool(dlg.api_key) or bool(dlg.custom_asr_api_key) or bool(dlg.custom_polish_api_key)
         if has_key:
             self.set_key_warning(False)
 
@@ -2742,7 +2766,7 @@ class VoiceTray(QSystemTrayIcon):
             if self._key_warning:
                 self.show_api_key_invalid_notice()
                 return
-            if not self._config.api_key and not self._config.custom_api_key:
+            if not self._config.api_key and not self._config.custom_asr_api_key and not self._config.custom_polish_api_key:
                 self._configure_apikey()
                 return
             self._audio.play_start()
@@ -2763,7 +2787,7 @@ class VoiceTray(QSystemTrayIcon):
             if self._key_warning:
                 self.show_api_key_invalid_notice()
                 return
-            if not self._config.api_key and not self._config.custom_api_key:
+            if not self._config.api_key and not self._config.custom_asr_api_key and not self._config.custom_polish_api_key:
                 self._configure_apikey()
                 return
             self._audio.play_start()

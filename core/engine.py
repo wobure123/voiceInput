@@ -110,9 +110,9 @@ class VoiceEngine(QObject):
         cfg = self.config
         if cfg.asr_provider == "openai_compat":
             return OpenAICompatASR(
-                api_key=cfg.custom_api_key,
+                api_key=cfg.custom_asr_api_key,
                 model=cfg.custom_asr_model,
-                base_url=cfg.custom_api_base_url,
+                base_url=cfg.custom_asr_base_url,
             )
         return DashScopeASR(
             api_key=cfg.api_key,
@@ -124,9 +124,9 @@ class VoiceEngine(QObject):
         cfg = self.config
         if cfg.polish_provider == "openai_compat":
             return TextPolisher(
-                api_key=cfg.custom_api_key,
+                api_key=cfg.custom_polish_api_key,
                 model=cfg.custom_polish_model,
-                base_url=cfg.custom_api_base_url,
+                base_url=cfg.custom_polish_base_url,
                 provider="openai_compat",
             )
         return TextPolisher(
